@@ -238,22 +238,42 @@ def classify(inputTree, featLabels, testVec):
     return classLabel
 
 
+# 求香农熵
+def  myShannonEnt(dataSet):
+    dataCount = {}  #{'yes': 2, 'no': 3}
+    for data in dataSet:
+        key = data[-1]
+        dataCount[key] = dataCount.get(key,0)+1
+    #求香农熵
+    shannonEnt = 0.0
+    totalEntries = len(dataSet)
+    # 字典类型迭代
+    for key in dataCount:
+        shannonEnt -=dataCount.get(key)/totalEntries*log(dataCount.get(key)/totalEntries,2)
+    return shannonEnt
+
+#按照属性划分特征集
+#找出第index个
+# def  splitDataSetByProp(dataSet,index ,value):
+
+
 
 
 if __name__ == '__main__':
     myDat, labels = createDataSet()
     # 求数据集熵值
-    print(calcShannonEnt(myDat))
+    # print(calcShannonEnt(myDat))
     # 属性分类
-    # print(splitDataSet(myDat,0,1))
+    print(splitDataSet(myDat,0,1))
     # 最大增益属性
-    print(chooseMaxBenefitProperty(myDat))
+    # print(chooseMaxBenefitProperty(myDat))
     # 创建tree的dict结构
-    print(createTree(myDat, labels))
+    # print(createTree(myDat, labels))
     # matplotlib绘图测试
-    myTree = retrieveTree(0)
+    # myTree = retrieveTree(0)
     # myTree1 = retrieveTree(1)
     # print(getTreeDepth(myTree))
     # createPlot(myTree1)
     # print(matplotlib.matplotlib_fname())  #获取matplotlib包所在路径
     # print(classify(myTree,labels,[1,0]))
+    # print(myShannonEnt(myDat))
