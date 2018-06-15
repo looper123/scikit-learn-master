@@ -1,11 +1,20 @@
+import operator
 from os import listdir
 
 from numpy import *
-import operator
-import matplotlib
-import matplotlib.pyplot as plt
+
 
 # k-近邻算法
+# 流程
+# 1 准备数据
+# 2 训练样本(取总数据的80%)  做归一化处理(防止某些属性的数据过大 对最后结果影响>> 其他属性)
+#     note: 一般会归一化到0~1 或者 -1~0之间
+# 3 近邻算法分类器  使用欧式距离公式求出 测试数据到训练样本之间的距离 求出其中距离测试数据最近的k个点
+#     公式： d= √(x0-x1)²+（y0-y1）²
+#     从k个点中拿出占比最高的类别 即最后结果
+
+
+
 
 # 待分类的数据   训练样本集   标签向量（类别）   选择近邻的数目
 def classify0(inX, dataSet, labels, k):
@@ -54,16 +63,16 @@ def files2matrix(filename):
     fr = open(filename)
     arrayOLines = fr.readlines()
     numberOfLines = len(arrayOLines)
-    returnMat = zeros((numberOfLines,3))
+    returnMat = zeros((numberOfLines, 3))
     classLabelsVector = []
     index = 0
     for line in arrayOLines:
         line.strip()
         listFromLine = line.split('\t')
-        returnMat[index,:] =listFromLine[0:3]
+        returnMat[index, :] = listFromLine[0:3]
         classLabelsVector.append(int(listFromLine[-1]))
-        index +=1
-    return returnMat,classLabelsVector
+        index += 1
+    return returnMat, classLabelsVector
 
 
 # 在使用欧式距离公式计算距离的时候 可能出现两个属性之间之间差值较大的情况 ，这会使该属性对计算结果的影响远远大于其他属性（而现实情况是所有属性同等重要）如何处理？？
@@ -78,58 +87,56 @@ def autoNorm(dataSet):
     normDataSet = zeros(shape(dataSet))
     m = dataSet.shape[0]
     # 因为特征值（训练数据）组成的矩阵是1*3 列的矩阵 所以minVals 和 range的值也必须为 1*3 列的矩阵 （不然无法做数学计算）
-    normDataSet = dataSet-tile(minVals,(m,1))
-    normDataSet = normDataSet/tile(ranges,(m,1))  #note that:  '/' in this place means  特征值相除而不是矩阵除法  在numpy包中要使用矩阵除法：linalg.solve(matA,matB)
-    return normDataSet,ranges,minVals
+    normDataSet = dataSet - tile(minVals, (m, 1))
+    normDataSet = normDataSet / tile(ranges, (
+    m, 1))  # note that:  '/' in this place means  特征值相除而不是矩阵除法  在numpy包中要使用矩阵除法：linalg.solve(matA,matB)
+    return normDataSet, ranges, minVals
 
 
 # 分类器对约会网站的测试代码
 def datingClassTest():
     horatio = 0.10
     # read data from file
-    datingDataMat,datingLabels = files2matrix('datingTestSet.txt')
+    datingDataMat, datingLabels = files2matrix('datingTestSet.txt')
     # 数据归一化
-    normMat,ranges,minVals = autoNorm(datingDataMat)
+    normMat, ranges, minVals = autoNorm(datingDataMat)
     m = normMat.shape[0]
-    numTestVecs = int(m*horatio)
+    numTestVecs = int(m * horatio)
     errorCount = 0.0
     for i in range(numTestVecs):
         # 待处理数据分类
-        classifierResult = classify0(normMat[i,:],normMat[numTestVecs:m,:],datingLabels[numTestVecs:m],3)
-        print("classifyResult:%d;realAnwer:%d"%(classifierResult,datingLabels[i]))
+        classifierResult = classify0(normMat[i, :], normMat[numTestVecs:m, :], datingLabels[numTestVecs:m], 3)
+        print("classifyResult:%d;realAnwer:%d" % (classifierResult, datingLabels[i]))
         # 结果正确性判断
-        if(classifierResult !=datingLabels[i]):errorCount +=1.0
+        if (classifierResult != datingLabels[i]): errorCount += 1.0
     # 计算错误率
-    print("total error rate is :%f"%(errorCount/float(numTestVecs)))
-
-
+    print("total error rate is :%f" % (errorCount / float(numTestVecs)))
 
     # 手写识别系统
     # 把图像转化为向量  创建 1*1024 的numpy数组  打开给定文件 循环读出文件前32行 并把每行头32个字符存储在numpy数组中 返回该数组
     def img2Vector(filename):
-        returnVect = zeros((1,1024))
+        returnVect = zeros((1, 1024))
         fr = open(filename)
         for i in range(32):
             lineStr = fr.readline()
             for j in range(32):
-                returnVect[0,32*i+j] = int(lineStr[j])
+                returnVect[0, 32 * i + j] = int(lineStr[j])
         return returnVect
 
-
     # 使用k近邻算法识别手写数字
-    def  handWritingClassTest():
+    def handWritingClassTest():
         hwLabels = []
         # 获取目录内容
         trainingFileList = listdir('trainingDigits')
         m = len(trainingFileList)
-        trainingMat = zeros((m,1024))
+        trainingMat = zeros((m, 1024))
         for i in range(m):
             # 从文件名解析分类数字
             fileNameStr = trainingFileList[i]
             fileStr = fileNameStr.split('.')[0]
             classNumStr = int(fileStr.split('_')[0])
             hwLabels.append(classNumStr)
-            trainingMat[i:]  = img2Vector('traningDigits/%s'%fileNameStr)
+            trainingMat[i:] = img2Vector('traningDigits/%s' % fileNameStr)
         testFileList = listdir('testDigits')
         errorCount = 0.0
         mTest = len(testFileList)
@@ -137,8 +144,8 @@ def datingClassTest():
             fileNameStr = testFileList[i]
             fileStr = fileNameStr.split('.')[0]
             classNumStr = int(fileStr.split('_')[0])
-            vectorUnderTest = img2Vector('testDigits%s'%fileNameStr)
-            classifierResult = classify0(vectorUnderTest,trainingMat,hwLabels,3)
+            vectorUnderTest = img2Vector('testDigits%s' % fileNameStr)
+            classifierResult = classify0(vectorUnderTest, trainingMat, hwLabels, 3)
             print("classifyResult:%d;realAnwer:%d" % (classifierResult, datingLabels[i]))
             # 结果正确性判断
             if (classifierResult != classNumStr): errorCount += 1.0
@@ -153,27 +160,26 @@ def createDataset():
     labels = ['A', 'A', 'B', 'B']
     return group, labels
 
-def myKnnArithMetic(orginData ,orginResult ,testData ,k):
+
+def myKnnArithMetic(orginData, orginResult, testData, k):
     size = orginData.shape[0]
     # 获取最大 最小值
     maxData = group.max(0)
     minData = group.min(0)
     # 训练数据归一化
-    normalData =( group-tile(minData,(size,1)))/(tile(maxData-minData,(size,1)))
-    difValSquare = (tile(testData,(size,1))-normalData)**2
+    normalData = (group - tile(minData, (size, 1))) / (tile(maxData - minData, (size, 1)))
+    difValSquare = (tile(testData, (size, 1)) - normalData) ** 2
     difValSum = difValSquare.sum(axis=1)
-    difValSqrt = difValSum**0.5
+    difValSqrt = difValSum ** 0.5
     indexOrder = difValSqrt.argsort()
     rate = {}
     for i in range(k):
         # 存在+1 不存在初始化为0
-        key =  orginResult[indexOrder[i]]
-        rate[key] = rate.get(key,0)+1
-    #获取属性占比最多的数据
-    sortedDict = sorted(rate, key=operator.itemgetter(0),reverse=True)
+        key = orginResult[indexOrder[i]]
+        rate[key] = rate.get(key, 0) + 1
+    # 获取属性占比最多的数据
+    sortedDict = sorted(rate, key=operator.itemgetter(0), reverse=True)
     return sortedDict[0][0]
-
-
 
 
 if __name__ == '__main__':
@@ -181,8 +187,7 @@ if __name__ == '__main__':
     # result = classify0([0, 0], group, labels, 3)
     # print(result)
     # print(sorted(group,key= lambda a: a[0],reverse= True)[0][0])
-    group = array([[100.0, 123.1], [131.0, 161.0], [140, 200], [100, 212.1],[147,174]])
-    myData = [150,150]
-    labels = ['A','B','A','B','B']
-    print(myKnnArithMetic(group,labels,myData,4))
-
+    group = array([[100.0, 123.1], [131.0, 161.0], [140, 200], [100, 212.1], [147, 174]])
+    myData = [150, 150]
+    labels = ['A', 'B', 'A', 'B', 'B']
+    print(myKnnArithMetic(group, labels, myData, 4))

@@ -4,7 +4,24 @@ from math import log
 import matplotlib.pyplot as plt
 
 
-# 决策树
+# 决策树算法流程 （ID3）
+# 1 准备数据
+# 2 按照给定的特征划分数据集 如：属性A =1 时 剩余数据组成的矩阵
+# 3 求香农熵函数 把数据集按照最后结果分类成dict类型的数据 如：{'yes': 2, 'no': 3}
+#     公式                 c
+#          Entropy(S) =   Σ - pi log2pi
+#                         i=1
+# 4 求最大增益属性  循环各个属性求出增益值  取出最大的一个
+# 5 使用dict 构建出决策树完整模型
+
+
+# 使用matplotlib 描绘决策树
+# 1 定义总体样式(x轴 y轴 backgroud颜色  箭头....)  note： 乱码处理
+# 2 决策树叶子节点数目
+# 3 决策树层数
+# 4 节点文本框样式
+# 5 描绘树的形状
+
 
 # 求给定数据集的香农熵  note:当dataset中有一种类型的数据时 熵为0  当存在两种类型的数据 并且数量相同时 熵为1
 def calcShannonEnt(dataSet):
@@ -231,32 +248,68 @@ def classify(inputTree, featLabels, testVec):
     # 这里假设测试数据中的属性排列顺序和 label 中一致
     featIndex = featLabels.index(firstStr)
     for key in secondDict:
-        if testVec[featIndex] ==key:
-            if type(secondDict[key]).__name__ =='dict':
-                classLabel = classify(secondDict[key],featLabels,testVec)
-            else: classLabel = secondDict[key]
+        if testVec[featIndex] == key:
+            if type(secondDict[key]).__name__ == 'dict':
+                classLabel = classify(secondDict[key], featLabels, testVec)
+            else:
+                classLabel = secondDict[key]
     return classLabel
 
 
 # 求香农熵
-def  myShannonEnt(dataSet):
-    dataCount = {}  #{'yes': 2, 'no': 3}
+def myShannonEnt(dataSet):
+    dataCount = {}  # {'yes': 2, 'no': 3}
     for data in dataSet:
         key = data[-1]
-        dataCount[key] = dataCount.get(key,0)+1
-    #求香农熵
+        dataCount[key] = dataCount.get(key, 0) + 1
+    # 求香农熵
     shannonEnt = 0.0
     totalEntries = len(dataSet)
     # 字典类型迭代
     for key in dataCount:
-        shannonEnt -=dataCount.get(key)/totalEntries*log(dataCount.get(key)/totalEntries,2)
+        shannonEnt -= dataCount.get(key) / totalEntries * log(dataCount.get(key) / totalEntries, 2)
     return shannonEnt
 
-#按照属性划分特征集
-#找出第index个
-# def  splitDataSetByProp(dataSet,index ,value):
+
+# 按照属性划分特征集
+# 找出第index个且值为value的特征集
+def splitDataSetByProp(dataSet, index, value):
+    character = []
+    for array in dataSet:
+        if array[index] == value:
+            character.append([array[index], array[-1]])
+    return character
 
 
+# 求最大增益
+def maxBenefitValue(dataSet, label):
+    maxBenefitVal = 0.0
+    maxBenefitPropIndex = None
+    shannonEnt = myShannonEnt(dataSet)
+    # 训练样本中属性个数
+    propertyNum = len(dataSet[0]) - 1
+    # 遍历所有属性
+    for i in range(propertyNum):
+        # 当前属性所有值
+        propList = [array[i] for array in dataSet]
+        propSet = set(propList)
+        minusShannonEnt = 0.0
+        for prop in propSet:
+            character = splitDataSetByProp(dataSet, i, prop)
+            # 该属性所有值对应的熵值相加
+            minusShannonEnt += myShannonEnt(character) * len(character) / float(len(dataSet))
+        # 该属性增益和最大比较
+        if shannonEnt - minusShannonEnt > maxBenefitVal:
+            maxBenefitVal = shannonEnt - minusShannonEnt
+            maxBenefitPropIndex = i
+    return maxBenefitPropIndex
+
+
+# 使用dict描述树的形状
+def createTreeModelByDict(dataSet, label):
+    maxBenefitPropIndex = maxBenefitValue(dataSet, label)
+    benefitPropList = [array[maxBenefitPropIndex] for array in dataSet]
+    benefitPropSet = set(benefitPropList)
 
 
 if __name__ == '__main__':
@@ -264,7 +317,7 @@ if __name__ == '__main__':
     # 求数据集熵值
     # print(calcShannonEnt(myDat))
     # 属性分类
-    print(splitDataSet(myDat,0,1))
+    # print(splitDataSet(myDat,0,1))
     # 最大增益属性
     # print(chooseMaxBenefitProperty(myDat))
     # 创建tree的dict结构
@@ -277,3 +330,11 @@ if __name__ == '__main__':
     # print(matplotlib.matplotlib_fname())  #获取matplotlib包所在路径
     # print(classify(myTree,labels,[1,0]))
     # print(myShannonEnt(myDat))
+    print(maxBenefitValue(myDat, labels))
+# [
+#         [1, 1, 'yes'],
+#         [1, 1, 'yes'],
+#         [1, 0, 'no'],
+#         [0, 1, 'no'],
+#         [1, 1, 'no']
+#     ]
